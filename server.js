@@ -2,32 +2,30 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-var users = []
+var servers = {};
+
 
 io.on('connection', function (socket) {
     console.log("New client connected");
 
-    socket.on("client-username", (username) => {
-        users.push(username);
-        io.sockets.emit("update-users", users);
-        socket.userName = username;
+    socket.on("create-server", (username) => {
+        servers[socket.id] = [];
+        servers[socket.id].push(username);
+        console.log(servers);
+        socket.emit("server-created", socket.id)
+        socket.emit("user-changed", servers[socket.id]);
     })
+
+    socket.on("join-server", (info) => {
+        servers[info.server].push(info.username);
+        socket.join(info.server);
+        io.sockets.in(info.server).emit("user-changed", servers[info.server]);
+    });
 
     socket.on("disconnect", function () {
-        users = users.filter((username) => {
-            return username !== socket.userName;
-        })
-        io.sockets.emit("update-users", users);
+        console.log("User has disconnected!")
     })
 });
-
-const getApiAndEmit = socket => {
-    const response = new Date();
-    socket.emit("FromAPI", response);
-}
-
-
-
 
 
 http.listen(4000, function() {

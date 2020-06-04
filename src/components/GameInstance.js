@@ -7,29 +7,43 @@ class GameInstance extends React.Component {
 
     state = {
         users: [],
+        serverID: ""
     }
 
     componentDidMount() {
-        console.log(this.props.username);
         this.socket = socketIOClient(ENDPOINT);
-        this.socket.emit("client-username", this.props.username)
 
-        this.socket.on("update-users", (users) => {
-            this.setState({users: users});
-        })
+        if (this.props.server === ""){
+            // Then we are creating a server
+            this.socket.emit("create-server", this.props.username);
+            this.socket.on("server-created", (serverID) => {
+                this.setState({serverID: serverID});
+            })
+
+        } else {
+            // We are joining a server.
+
+            this.socket.emit("join-server", {server: this.props.server, username: this.props.username});
+        }
+
+        this.socket.on("user-changed", (users) => {
+           this.setState({users: users});
+        });
+
+
     }
 
     componentWillUnmount() {
         this.socket.emit("user-disconnecting", this.props.username);
 
-        this.setState({users: []});
-
-        this.socket.disconnect();
     }
 
     render() {
         return (
-            <p>{this.state.users.join("\n")}</p>
+            <div>
+                <p>{this.state.serverID}</p>
+                <p>{this.state.users.toString()}</p>
+            </div>
         );
     }
 }

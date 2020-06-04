@@ -21,6 +21,23 @@
     transform: translate(-50%, -50%);
 }
 
+.stack{
+    display: block;
+}
+
+
+.join{
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 2px 25%;
+    text-decoration: none;
+    margin: 4px 2px;
+    cursor: pointer;
+    height: 50px;
+}
+
+
 
 .create-server{
     background-color: #4CAF50;

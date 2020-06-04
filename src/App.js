@@ -12,10 +12,15 @@ class App extends React.Component{
 
   state = {
     userName: "",
+    serverID: ""
   }
 
   setUsername = (username) => {
       this.setState({userName: username});
+  }
+
+  setServerID = (serverID) => {
+      this.setState({serverID: serverID})
   }
 
   render(){
@@ -31,7 +36,12 @@ class App extends React.Component{
             )} />
             <Route exact path="/gameInstance" render={props => (
                 <React.Fragment>
-                  <GameInstance username={this.state.userName} />
+                  <GameInstance username={this.state.userName} server={this.state.serverID} />
+                </React.Fragment>
+            )}/>
+            <Route exact path="/join" render={props => (
+                <React.Fragment>
+                    <Join setUsername={this.setUsername} setServerID={this.setServerID}/>
                 </React.Fragment>
             )}/>
           </div>
