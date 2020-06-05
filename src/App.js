@@ -15,6 +15,11 @@ class App extends React.Component{
     serverID: ""
   }
 
+  constructor() {
+      super();
+      document.title = "Online Draughts"
+  }
+
   setUsername = (username) => {
       this.setState({userName: username});
   }
