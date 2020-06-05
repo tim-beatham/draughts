@@ -21,4 +21,5 @@ const header = {
     display: 'flex',
     width: '100%',
     justifyContent: 'center',
+    height: "15%"
 }
