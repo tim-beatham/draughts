@@ -78,7 +78,6 @@ function canJoin(socket) {
         }
 
         if (!users[username]){
-            console.log("hello");
             socket.emit("can-join");
         }
 
