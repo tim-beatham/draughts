@@ -3,6 +3,51 @@ import React from "react";
 
 const BOARD_SIZE = 8;
 
+// Converts a board array to a String.
+function boardToStringArray(board){
+
+    var stringArray = [];
+
+    for (var row = 0; row < board.length; row++){
+        let string = "";
+        for (var col = 0; col < board.length; col++){
+            // Get the current piece
+            if (board[row][col] === null){
+                string += "-";
+            } else if (board[row][col].isTeam1){
+                string += "B";
+            } else {
+                string += "W";
+            }
+        }
+        stringArray.push(string);
+    }
+    return stringArray;
+}
+
+function stringArrayToBoard(stringArrayBoard, squareSize) {
+    var board = [];
+    for (var row = 0; row < stringArrayBoard.length; row++){
+        let rowList = [];
+        for (var col = 0; col < stringArrayBoard[row].length; col++){
+            switch (stringArrayBoard[row].charAt(col)){
+                case "-":
+                    rowList.push(null);
+                    break;
+                case "B":
+                    rowList.push(new Piece(true, col, row, squareSize, board));
+                    break;
+                case "W":
+                    rowList.push(new Piece(false, col, row, squareSize, board));
+                    break;
+            }
+        }
+        board.push(rowList);
+    }
+    return board;
+}
+
+
 // Represents a single piece.
 class Piece {
     constructor(isTeam1, indexX, indexY, squareSize, board) {
@@ -120,7 +165,7 @@ class Board extends React.Component {
     }
 
     state = {
-        team1Turn: true
+        team1Turn: true,
     }
 
     onMouseMove = (e) => {
@@ -145,6 +190,8 @@ class Board extends React.Component {
     };
 
     updateMoves = () => {
+
+
         for (var row = 0; row < this.boardSize; row++){
             for (var col = 0; col < this.boardSize; col++){
                 if (this.board[row][col] !== null){
@@ -219,7 +266,8 @@ class Board extends React.Component {
 
         if (this.board[indexY][indexX] !== null){
 
-            if (this.board[indexY][indexX].isTeam1 === this.state.team1Turn) {
+            if (this.board[indexY][indexX].isTeam1 === this.state.team1Turn
+                && this.board[indexY][indexX].isTeam1 === this.props.team) {
                 // Draw a red square.
                 this.picker.show(indexX, indexY);
             }
@@ -227,11 +275,11 @@ class Board extends React.Component {
             // The user has clicked on a valid square.
             let moved = this.board[this.picker.indexY][this.picker.indexX].move(indexX, indexY);
 
-            if (moved)
+            if (moved) {
                 this.picker.hide();
-
+                this.props.socket.emit("client-move-made", {board: boardToStringArray(this.board), team: this.state.team1Turn, username: this.props.user});
+            }
             this.setState({team1Turn: !this.state.team1Turn});
-
         }
         this.updateCanvas();
 
@@ -242,6 +290,16 @@ class Board extends React.Component {
         this.squareSize = this.canvasRef.current.width / this.boardSize;
         this.genBoard();
         this.updateCanvas();
+
+        this.props.socket.on("server-move-made", (info) => {
+            this.board = stringArrayToBoard(info.board, this.squareSize);
+            this.updateMoves();
+            this.setState({team1Turn: !info.team});
+            this.updateCanvas();
+        })
+
+        console.log(boardToStringArray(this.board));
+
     }
 
     componentDidUpdate() {

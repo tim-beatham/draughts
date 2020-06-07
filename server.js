@@ -57,6 +57,13 @@ function messageSent(socket) {
     });
 }
 
+function moveMade(socket) {
+    socket.on("client-move-made", (info) => {
+        // Broad cast it to everyone on the socket.
+        io.sockets.in(users[info.username]).emit("server-move-made", {board: info.board, team: info.team});
+    });
+}
+
 function canJoin(socket) {
     socket.on("check-join", (info) => {
         // Check if the user does not exist
@@ -91,6 +98,7 @@ io.on('connection', function (socket) {
     userJoined(socket);
     messageSent(socket);
     canJoin(socket);
+    moveMade(socket);
 
     socket.on("user-disconnecting", (username) => {
         removeUser(username);

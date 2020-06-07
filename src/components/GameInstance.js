@@ -21,7 +21,8 @@ class GameInstance extends React.Component {
         message: "",
         messages: "",
         noServer: false,
-        userExists: false
+        userExists: false,
+        team1: true
     }
 
     componentDidMount() {
@@ -45,11 +46,13 @@ class GameInstance extends React.Component {
             this.socket.emit("create-server", this.props.username);
             this.socket.on("server-created", (serverID) => {
                 this.setState({serverID: serverID});
-            })
+            });
+            this.setState({team1: true});
 
         } else {
             // We are joining a server.
             this.socket.emit("join-server", {server: this.props.server, username: this.props.username});
+            this.setState({team1: false});
         }
 
         // Listen for the user sending a message.
@@ -107,7 +110,7 @@ class GameInstance extends React.Component {
                 <div>
                     <p>{this.state.serverID}</p>
                     <p>Users: {this.state.users.join(", ")}</p>
-                    <Board />
+                    <Board socket={this.socket} user={this.props.username} team={this.state.team1}/>
                 </div>
             </div>
         );
