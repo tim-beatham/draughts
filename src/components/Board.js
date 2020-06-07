@@ -12,8 +12,6 @@ class Piece {
     }
 }
 
-
-
 class Board extends React.Component {
 
     constructor() {
@@ -24,6 +22,32 @@ class Board extends React.Component {
         this.boardSize = BOARD_SIZE;
         this.genBoard();
     }
+
+    onMouseMove = (e) => {
+        // When the mouse moves we want to draw a highlighter.
+        // Get the canvas rectangle.
+        const rect = this.canvasRef.current.getBoundingClientRect();
+        var relativeX = e.clientX - rect.left;
+        var relativeY = e.clientY - rect.top;
+
+        // Now we have the relative X and Y coordinates we can do some drawing.
+        this.updateCanvas();
+
+        let squareSize = this.canvasRef.current.width / BOARD_SIZE;
+
+        const ctx = this.canvasRef.current.getContext('2d');
+
+        ctx.fillStyle = "rgba(51, 102, 255, 0.3)";
+
+        var indexX = Math.floor(relativeX / squareSize);
+        var indexY = Math.floor(relativeY / squareSize);
+
+        ctx.fillRect(indexX * squareSize, indexY * squareSize, squareSize, squareSize);
+
+        console.log("hello");
+    };
+
+
 
     genBoard() {
         this.board = [];
@@ -81,13 +105,12 @@ class Board extends React.Component {
                     ctx.fillStyle = colour;
                     ctx.fill();
                 }
-
-
             }
         }
     }
 
     componentDidMount() {
+        this.canvasRef.current.onMouseMove = this.onMouseMove;
         this.updateCanvas();
     }
 
@@ -97,7 +120,7 @@ class Board extends React.Component {
 
     render() {
         return (
-            <canvas id="Board" ref={this.canvasRef} width={700} height={700}/>
+            <canvas id="Board" onMouseMove={this.onMouseMove} onMouseLeave={this.updateCanvas.bind(this)} ref={this.canvasRef} width={700} height={700}/>
         );
     }
 }
