@@ -2,10 +2,19 @@ import React from "react";
 import socketIOClient from "socket.io-client";
 import "../stylesheets/CreateOrJoin.css"
 import Board from "./Board";
+import {Redirect} from 'react-router-dom';
 
 const ENDPOINT = "http://86.134.79.199:4000"
 
 class GameInstance extends React.Component {
+
+    constructor() {
+        super();
+
+        // Need a reference to the message box so I can delete the text in it.
+        this.msgBoxRef = React.createRef();
+
+    }
 
     state = {
         users: [],
@@ -15,6 +24,8 @@ class GameInstance extends React.Component {
     }
 
     componentDidMount() {
+
+
         this.socket = socketIOClient(ENDPOINT);
 
         // Listen for the user closing the browser,
@@ -67,15 +78,24 @@ class GameInstance extends React.Component {
         if (this.state.message.trim() !== "") {
             this.socket.emit("message-sent", {username: this.props.username, message: this.state.message})
         }
+        this.msgBoxRef.current.value = "";
+        this.state.message = "";
+    }
+
+    redirectToRoot = () => {
+        if (this.props.username === ""){
+            return <Redirect to='/' />
+        }
     }
 
     render() {
         return (
             <div>
                 <div id="chatDiv">
+                    {this.redirectToRoot()}
                     <textarea id="chatArea" value={this.state.messages} readOnly/>
                     <form onSubmit={this.submitChat}>
-                        <input id="chatForm" type="text" onChange={this.onMessageChange}/>
+                        <input id="chatForm" ref={this.msgBoxRef} type="text" onChange={this.onMessageChange}/>
                         <input type="submit" id="chatSubmit" value="Enter"/>
                     </form>
                 </div>
@@ -85,8 +105,6 @@ class GameInstance extends React.Component {
                     <Board />
                 </div>
             </div>
-
-
         );
     }
 }

@@ -3,8 +3,6 @@ import React from "react";
 
 const BOARD_SIZE = 8;
 
-
-
 class Board extends React.Component {
 
     constructor() {

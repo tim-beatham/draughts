@@ -29,8 +29,11 @@ class Join extends React.Component{
     render() {
         return (
             <div className="center">
+                <p>Enter a username: </p>
                 <input className='stack' type="text" onChange={this.usernameChange}/>
+                <p>Enter a Server ID: </p>
                 <input className='stack' type="text" onChange={this.serverChange}/>
+                <br/>
                 <Link className='join' to="/gameInstance" onClick={this.setJoinInfo}>Join</Link>
             </div>
         );

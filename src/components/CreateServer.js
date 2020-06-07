@@ -20,8 +20,11 @@ class CreateServer extends React.Component {
     render() {
         return (
             <div className="center" >
-                <input type="text" id="server-box" onChange={this.usernameChange}/>
-                <Link to="/gameInstance" onClick={this.props.setUsername.bind(this, this.state.username)}
+                Enter your username: <br/>
+                <br />
+                <input type="text" className="stack" id="server-box" onChange={this.usernameChange}/>
+                <br/>
+                <Link to="/gameInstance" className="stack" onClick={this.props.setUsername.bind(this, this.state.username)}
                       className="create-server">Create Server</Link>
             </div>
         );
