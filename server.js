@@ -57,12 +57,41 @@ function messageSent(socket) {
     });
 }
 
+function canJoin(socket) {
+    socket.on("check-join", (info) => {
+        // Check if the user does not exist
+        if (users[info.username]) {
+            socket.emit("user-exists-error");
+        }
+        if (!servers[info.server]) {
+            socket.emit("no-server-error");
+        }
+
+        if (!users[info.username] && servers[info.server]){
+            socket.emit("can-join");
+        }
+    });
+
+    socket.on("check-create", username => {
+        if (users[username]){
+            socket.emit("user-exists-error");
+        }
+
+        if (!users[username]){
+            console.log("hello");
+            socket.emit("can-join");
+        }
+
+    });
+}
+
 
 io.on('connection', function (socket) {
     console.log("New client connected")
     createServer(socket);
     userJoined(socket);
     messageSent(socket);
+    canJoin(socket);
 
     socket.on("user-disconnecting", (username) => {
         removeUser(username);

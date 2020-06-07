@@ -7,6 +7,7 @@ import ReactDOM from 'react-dom';
 import CreateServer from "./components/CreateServer";
 import Join from "./components/Join";
 import GameInstance from "./components/GameInstance";
+import CheckServers from "./components/CheckServers";
 
 class App extends React.Component{
 
@@ -36,7 +37,12 @@ class App extends React.Component{
             <Route exact path="/" component={CreateOrJoin} />
             <Route path="/create" render={props => (
                 <React.Fragment>
-                  <CreateServer setUsername={this.setUsername} />
+                  <CreateServer setUsername={this.setUsername} setServer={this.setServerID}/>
+                </React.Fragment>
+            )} />
+            <Route exact path="/check" render={props => (
+                <React.Fragment>
+                    <CheckServers username={this.state.userName} server={this.state.serverID} />
                 </React.Fragment>
             )} />
             <Route exact path="/gameInstance" render={props => (

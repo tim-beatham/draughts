@@ -4,36 +4,41 @@ import "../stylesheets/CreateOrJoin.css"
 import Board from "./Board";
 import {Redirect} from 'react-router-dom';
 
-const ENDPOINT = "http://86.134.79.199:4000"
+const ENDPOINT = "http://localhost:4000"
 
 class GameInstance extends React.Component {
 
     constructor() {
         super();
-
         // Need a reference to the message box so I can delete the text in it.
         this.msgBoxRef = React.createRef();
-
+        this.socket = socketIOClient(ENDPOINT);
     }
 
     state = {
         users: [],
         serverID: "",
         message: "",
-        messages: ""
+        messages: "",
+        noServer: false,
+        userExists: false
     }
 
     componentDidMount() {
-
-
-        this.socket = socketIOClient(ENDPOINT);
-
         // Listen for the user closing the browser,
         window.addEventListener("beforeunload", (ev) => {
             this.disconnect();
         });
 
         this.socket.username = this.props.username;
+
+        this.socket.on('user-exists-error', () => {
+            this.setState({userExists: true});
+        })
+
+        this.socket.on('no-server-error', () => {
+            this.setState({noServer: true});
+        });
 
         if (this.props.server === ""){
             // Then we are creating a server

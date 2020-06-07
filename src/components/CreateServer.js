@@ -5,8 +5,6 @@ import {Link} from "react-router-dom";
 import socketIOClient from "socket.io-client"
 
 
-const ENDPOINT = "http://localhost:4000";
-
 class CreateServer extends React.Component {
 
     state = {
@@ -17,6 +15,11 @@ class CreateServer extends React.Component {
         this.setState({username: event.target.value});
     };
 
+    setJoinInfo = () => {
+        this.props.setUsername.call(this, this.state.username);
+        this.props.setServer.call(this, "");
+    };
+
     render() {
         return (
             <div className="center" >
@@ -24,7 +27,7 @@ class CreateServer extends React.Component {
                 <br />
                 <input type="text" className="stack" id="server-box" onChange={this.usernameChange}/>
                 <br/>
-                <Link to="/gameInstance" className="stack" onClick={this.props.setUsername.bind(this, this.state.username)}
+                <Link to="/check" className="stack" onClick={this.setJoinInfo}
                       className="create-server">Create Server</Link>
             </div>
         );
