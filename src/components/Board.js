@@ -58,8 +58,10 @@ class Piece {
         this.squareSize = squareSize;
 
         this.validMoves = [];
+        this.validTakes = [];
 
         this.potentialMoves = [];
+        this.potentialTakes = [];
 
         this.setPotentialMoves()
     }
@@ -79,23 +81,52 @@ class Piece {
         ctx.fill();
     }
 
+
+
     setPotentialMoves = () => {
         this.potentialMoves = [];
+        this.potentialTakes = [];
+
         if (this.isTeam1){
             this.potentialMoves.push([-1, 1], [1, 1]);
+            this.potentialTakes.push([-2, 2], [2, 2]);
         } else {
             this.potentialMoves.push([-1, -1], [1, -1]);
+            this.potentialTakes.push([-2, -2], [2, -2]);
         }
     }
 
     calcValidMoves = () => {
         this.validMoves = [];
         this.potentialMoves.forEach((move) => {
-            if (this.board[this.indexY + move[1]][this.indexX + move[0]] === null){
-                // The move is valid.
-                this.validMoves.push([this.indexX + move[0], this.indexY + move[1]]);
+            let movePosX = this.indexX + move[0];
+            let movePosY = this.indexY + move[1];
+
+            if (movePosY >= 0 && movePosY < this.board.length && movePosX >= 0 && movePosX < this.board.length) {
+                if (this.board[movePosY][movePosX] === null) {
+                    // The move is valid.
+                    this.validMoves.push([movePosX, movePosY]);
+                }
             }
         });
+    }
+
+    calcValidTakes = () => {
+        this.validTakes = [];
+        this.potentialTakes.forEach((take) => {
+            let takePosX = this.indexX + take[0];
+            let takePosY = this.indexY + take[1]
+
+            if (takePosY >= 0 && takePosY < this.board.length && takePosX >= 0 && takePosX < this.board.length) {
+                if (this.board[takePosY][takePosX] === null &&
+                    this.board[(takePosY + this.indexY) / 2][(takePosX + this.indexX) / 2] !== null) {
+
+                    if (this.board[(takePosY + this.indexY) / 2][(takePosX + this.indexX) / 2].isTeam1 !== this.isTeam1) {
+                        this.validTakes.push([takePosX, takePosY]);
+                    }
+                }
+            }
+        })
     }
 
     getColour = () => {
@@ -107,6 +138,9 @@ class Piece {
 
     move = (indexX, indexY) => {
         for (var i = 0; i < this.validMoves.length; i++){
+
+            console.log("Moves: ", this.validMoves);
+            console.log("Take: ", [indexX, indexY]);
 
             if (indexX === this.validMoves[i][0] && indexY === this.validMoves[i][1]){
 
@@ -120,6 +154,34 @@ class Piece {
             }
         }
         return false;
+    }
+
+    take = (indexX, indexY) => {
+        for (var i = 0; i < this.validTakes.length; i++){
+            if (indexX === this.validTakes[i][0] && indexY === this.validTakes[i][1]){
+
+                // Get the enemy position.
+                let enemyPosX = (indexX + this.indexX) / 2;
+                let enemyPosY = (indexY + this.indexY) / 2;
+
+                this.board[enemyPosY][enemyPosX] = null;
+
+                this.board[this.indexY][this.indexX] = null;
+                this.board[indexY][indexX] = this;
+
+                // Make the move
+                this.indexX = indexX;
+                this.indexY = indexY;
+                return true;
+            }
+        }
+
+        // no takes can be made.
+        return false;
+    }
+
+    canTake = () => {
+        return this.validTakes.length > 0;
     }
 }
 
@@ -166,6 +228,7 @@ class Board extends React.Component {
 
     state = {
         team1Turn: true,
+        chaining: false
     }
 
     onMouseMove = (e) => {
@@ -190,12 +253,11 @@ class Board extends React.Component {
     };
 
     updateMoves = () => {
-
-
         for (var row = 0; row < this.boardSize; row++){
             for (var col = 0; col < this.boardSize; col++){
                 if (this.board[row][col] !== null){
                     this.board[row][col].calcValidMoves();
+                    this.board[row][col].calcValidTakes();
                 }
             }
         }
@@ -260,26 +322,61 @@ class Board extends React.Component {
 
         var indexX = Math.floor(relativeX / this.squareSize);
         var indexY = Math.floor(relativeY / this.squareSize);
+        if (!this.state.chaining) {
+            if (this.board[indexY][indexX] !== null) {
+
+                if (this.board[indexY][indexX].isTeam1 === this.state.team1Turn
+                    && this.board[indexY][indexX].isTeam1 === this.props.team) {
+                    // Draw a red square.
+                    this.picker.show(indexX, indexY);
+                }
+            } else if (this.picker.isVisible) {
+                if (this.board[this.picker.indexY][this.picker.indexX].move(indexX, indexY)) {
+                    this.picker.hide();
+                    this.props.socket.emit("client-move-made", {
+                        board: boardToStringArray(this.board),
+                        team: this.state.team1Turn, username: this.props.user
+                    });
+                } else if (this.board[this.picker.indexY][this.picker.indexX].take(indexX, indexY)) {
+                    this.picker.hide();
 
 
-        const ctx = this.canvasRef.current.getContext('2d');
+                    // We need to check if the piece can be chained.
+                    this.updateMoves();
 
-        if (this.board[indexY][indexX] !== null){
+                    if (this.board[indexY][indexX].canTake()) {
+                        this.picker.show(indexX, indexY);
+                        this.setState({chaining: true});
+                    } else {
+                        this.props.socket.emit("client-move-made", {
+                            board: boardToStringArray(this.board),
+                            team: this.state.team1Turn, username: this.props.user
+                        });
+                        this.picker.hide();
+                        this.setState({chaining: false});
+                    }
 
-            if (this.board[indexY][indexX].isTeam1 === this.state.team1Turn
-                && this.board[indexY][indexX].isTeam1 === this.props.team) {
-                // Draw a red square.
-                this.picker.show(indexX, indexY);
+
+                }
             }
-        } else if (this.picker.isVisible){
-            // The user has clicked on a valid square.
-            let moved = this.board[this.picker.indexY][this.picker.indexX].move(indexX, indexY);
+        } else {
+            // When chaining.
+            if (this.board[this.picker.indexY][this.picker.indexX].take(indexX, indexY)){
+                this.updateMoves();
+                // Check for chaining again.
+                if (!this.board[indexX][indexY].canTake()){
+                    this.props.socket.emit("client-move-made", {
+                        board: boardToStringArray(this.board),
+                        team: this.state.team1Turn, username: this.props.user
+                    });
+                    this.picker.hide();
+                    this.setState({chaining: false});
+                } else {
+                    this.picker.show(indexX, indexY);
+                }
 
-            if (moved) {
-                this.picker.hide();
-                this.props.socket.emit("client-move-made", {board: boardToStringArray(this.board), team: this.state.team1Turn, username: this.props.user});
+
             }
-            this.setState({team1Turn: !this.state.team1Turn});
         }
         this.updateCanvas();
 

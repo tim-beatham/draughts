@@ -62,6 +62,10 @@ function moveMade(socket) {
         // Broad cast it to everyone on the socket.
         io.sockets.in(users[info.username]).emit("server-move-made", {board: info.board, team: info.team});
     });
+
+    socket.on("client-take-made", (info) => {
+        io.sockets.in(users[info.username]).emit("server-take-made", {board: info.board, team: info.team});
+    });
 }
 
 function canJoin(socket) {
