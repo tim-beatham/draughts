@@ -15,9 +15,17 @@ function boardToStringArray(board){
             if (board[row][col] === null){
                 string += "-";
             } else if (board[row][col].isTeam1){
-                string += "B";
+                if (board[row][col] instanceof King){
+                    string += "B";
+                } else {
+                    string += "b";
+                }
             } else {
-                string += "W";
+                if (board[row][col] instanceof King){
+                    string += "W";
+                } else {
+                    string += "w";
+                }
             }
         }
         stringArray.push(string);
@@ -35,11 +43,18 @@ function stringArrayToBoard(stringArrayBoard, squareSize) {
                     rowList.push(null);
                     break;
                 case "B":
-                    rowList.push(new Piece(true, col, row, squareSize, board));
+                    rowList.push(new King(true, col, row, squareSize, board));
                     break;
                 case "W":
+                    rowList.push(new King(false, col, row, squareSize, board));
+                    break;
+                case "w":
                     rowList.push(new Piece(false, col, row, squareSize, board));
                     break;
+                case "b":
+                    rowList.push(new Piece(true, col, row, squareSize, board));
+                    break;
+
             }
         }
         board.push(rowList);
@@ -66,7 +81,7 @@ class Piece {
         this.setPotentialMoves()
     }
 
-    drawPiece = (ctx) => {
+    drawPiece(ctx) {
         let drawX = this.indexX * this.squareSize;
         let drawY = this.indexY * this.squareSize;
 
@@ -80,8 +95,6 @@ class Piece {
         ctx.arc(centreX, centreY, this.squareSize / 2, 0, 2 * Math.PI, false);
         ctx.fill();
     }
-
-
 
     setPotentialMoves = () => {
         this.potentialMoves = [];
@@ -183,6 +196,26 @@ class Piece {
     canTake = () => {
         return this.validTakes.length > 0;
     }
+}
+
+class King extends Piece {
+    constructor(isTeam1, indexX, indexY, squareSize, board) {
+        super(isTeam1, indexX, indexY, squareSize, board);
+        this.setPotentialMoves();
+    }
+
+    setPotentialMoves = () => {
+        this.potentialMoves = [[-1,1], [-1,-1], [1,1], [1,-1]];
+        this.potentialTakes = [[-2,2], [-2,-2], [2,2], [2,-2]];
+    }
+
+    drawPiece = (ctx) => {
+        super.drawPiece(ctx);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "yellow";
+        ctx.stroke();
+    }
+
 }
 
 // Class that represent the user pressing on a draught piece.
@@ -312,6 +345,16 @@ class Board extends React.Component {
         this.updateMoves();
     }
 
+    promoteToKing = (indexX, indexY) => {
+        // Check if the piece can be kinged.
+        if ((this.board[indexY][indexX].isTeam1 && indexY === this.board.length - 1) ||
+            !this.board[indexY][indexX].isTeam1 && indexY === 0){
+            // King the piece.
+            this.board[indexY][indexX] = new King(this.board[indexY][indexX].isTeam1, indexX, indexY,
+                this.squareSize, this.board);
+        }
+    }
+
     onClick = (e) => {
         // When the mouse moves we want to draw a highlighter.
         // Get the canvas rectangle.
@@ -333,10 +376,14 @@ class Board extends React.Component {
             } else if (this.picker.isVisible) {
                 if (this.board[this.picker.indexY][this.picker.indexX].move(indexX, indexY)) {
                     this.picker.hide();
+
+                    this.promoteToKing(indexX, indexY);
+
                     this.props.socket.emit("client-move-made", {
                         board: boardToStringArray(this.board),
                         team: this.state.team1Turn, username: this.props.user
                     });
+
                 } else if (this.board[this.picker.indexY][this.picker.indexX].take(indexX, indexY)) {
                     this.picker.hide();
 
@@ -348,12 +395,15 @@ class Board extends React.Component {
                         this.picker.show(indexX, indexY);
                         this.setState({chaining: true});
                     } else {
+                        this.promoteToKing(indexX, indexY);
+
                         this.props.socket.emit("client-move-made", {
                             board: boardToStringArray(this.board),
                             team: this.state.team1Turn, username: this.props.user
                         });
                         this.picker.hide();
                         this.setState({chaining: false});
+
                     }
 
 
@@ -365,6 +415,7 @@ class Board extends React.Component {
                 this.updateMoves();
                 // Check for chaining again.
                 if (!this.board[indexX][indexY].canTake()){
+                    this.promoteToKing(indexX, indexY);
                     this.props.socket.emit("client-move-made", {
                         board: boardToStringArray(this.board),
                         team: this.state.team1Turn, username: this.props.user
@@ -393,6 +444,9 @@ class Board extends React.Component {
             this.updateMoves();
             this.setState({team1Turn: !info.team});
             this.updateCanvas();
+
+            this.props.setTurnMsg.call(this, !info.team);
+
         })
 
         console.log(boardToStringArray(this.board));

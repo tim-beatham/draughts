@@ -22,7 +22,16 @@ class GameInstance extends React.Component {
         messages: "",
         noServer: false,
         userExists: false,
-        team1: true
+        team1: true,
+        turnMsg: "Waiting for the other player to join."
+    }
+
+    changeTurnMsg = (team) => {
+        if (team) {
+            this.setState({turnMsg: this.state.users[0] + "'s turn"});
+        } else {
+            this.setState({turnMsg: this.state.users[1] + "'s turn"});
+        }
     }
 
     componentDidMount() {
@@ -65,6 +74,9 @@ class GameInstance extends React.Component {
            this.setState({users: users});
         });
 
+        this.socket.on("start", () => {
+            this.changeTurnMsg(this.state.users[0] + "'s turn");
+        });
     }
 
     disconnect = () => {
@@ -110,7 +122,9 @@ class GameInstance extends React.Component {
                 <div>
                     <p>{this.state.serverID}</p>
                     <p>Users: {this.state.users.join(", ")}</p>
-                    <Board socket={this.socket} user={this.props.username} team={this.state.team1}/>
+                    <p>{this.state.turnMsg}</p>
+                    <Board socket={this.socket} user={this.props.username} team={this.state.team1}
+                    setTurnMsg={this.changeTurnMsg}/>
                 </div>
             </div>
         );

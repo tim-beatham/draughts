@@ -11,7 +11,8 @@ class CheckServers extends React.Component {
         userExists: false,
         noServer: false,
         canJoin: false,
-        errorMsg: ""
+        errorMsg: "",
+        full: false
     }
 
     constructor() {
@@ -41,6 +42,12 @@ class CheckServers extends React.Component {
         this.socket.on("can-join", () => {
             this.setState({canJoin: true});
         })
+
+        this.socket.on("server-full", () => {
+            console.log("alriight");
+            this.setState({full: true})
+            this.cantJoin();
+        });
     }
 
     componentWillUnmount() {
@@ -57,7 +64,11 @@ class CheckServers extends React.Component {
         }
 
         if (this.state.userExists) {
-            errorMsg += "The Username Already Exists!";
+            errorMsg += "The Username Already Exists!\n";
+        }
+
+        if (this.state.full){
+            errorMsg += "I am afraid the Server is Full!"
         }
         this.setState({errorMsg: errorMsg});
     }

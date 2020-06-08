@@ -28,6 +28,11 @@ function userJoined(socket) {
 
         // Need to add the user to the users object.
         users[info.username] = info.server;
+
+        // Get the number of users on the server.
+        if (servers[info.server].length === 2){
+            io.sockets.in(info.server).emit("start");
+        }
     });
 }
 
@@ -62,11 +67,8 @@ function moveMade(socket) {
         // Broad cast it to everyone on the socket.
         io.sockets.in(users[info.username]).emit("server-move-made", {board: info.board, team: info.team});
     });
-
-    socket.on("client-take-made", (info) => {
-        io.sockets.in(users[info.username]).emit("server-take-made", {board: info.board, team: info.team});
-    });
 }
+
 
 function canJoin(socket) {
     socket.on("check-join", (info) => {
@@ -76,11 +78,14 @@ function canJoin(socket) {
         }
         if (!servers[info.server]) {
             socket.emit("no-server-error");
+        } else if (servers[info.server].length >= 2){
+            socket.emit("server-full");
         }
 
-        if (!users[info.username] && servers[info.server]){
+        if (!users[info.username] && servers[info.server] && servers[info.server].length < 2){
             socket.emit("can-join");
         }
+
     });
 
     socket.on("check-create", username => {
