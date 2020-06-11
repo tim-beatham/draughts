@@ -196,6 +196,10 @@ class Piece {
     canTake = () => {
         return this.validTakes.length > 0;
     }
+
+    canMove = () => {
+        return this.validMoves.length > 0;
+    }
 }
 
 class King extends Piece {
@@ -284,6 +288,34 @@ class Board extends React.Component {
         ctx.fillRect(indexX * this.squareSize, indexY * this.squareSize, this.squareSize, this.squareSize);
 
     };
+
+    // Check if team1 has won the game.
+    canTeam1Move() {
+        for (var row of this.board){
+            for (var piece of row) {
+                if (piece != null){
+                    if (piece.isTeam1 && (piece.canMove() || piece.canTake())) {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
+
+    canTeam2Move() {
+        for (var row of this.board){
+            for (var piece of row) {
+                if (piece != null){
+                    if (!piece.isTeam1 && (piece.canMove() || piece.canTake())) {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
+
 
     updateMoves = () => {
         for (var row = 0; row < this.boardSize; row++){
@@ -379,6 +411,8 @@ class Board extends React.Component {
 
                     this.promoteToKing(indexX, indexY);
 
+                    this.updateMoves();
+
                     this.props.socket.emit("client-move-made", {
                         board: boardToStringArray(this.board),
                         team: this.state.team1Turn, username: this.props.user
@@ -403,7 +437,6 @@ class Board extends React.Component {
                         });
                         this.picker.hide();
                         this.setState({chaining: false});
-
                     }
 
 
@@ -411,10 +444,10 @@ class Board extends React.Component {
             }
         } else {
             // When chaining.
-            if (this.board[this.picker.indexY][this.picker.indexX].take(indexX, indexY)){
+            if (this.board[this.picker.indexY][this.picker.indexX].take(indexX, indexY)) {
                 this.updateMoves();
                 // Check for chaining again.
-                if (!this.board[indexX][indexY].canTake()){
+                if (!this.board[indexY][indexX].canTake()) {
                     this.promoteToKing(indexX, indexY);
                     this.props.socket.emit("client-move-made", {
                         board: boardToStringArray(this.board),
@@ -425,12 +458,18 @@ class Board extends React.Component {
                 } else {
                     this.picker.show(indexX, indexY);
                 }
-
-
             }
         }
-        this.updateCanvas();
+        // Check if a team has won
+        if (!this.canTeam1Move()){
+            this.props.socket.emit("team2-won", this.props.user)
+        }
 
+        if (!this.canTeam2Move()){
+            this.props.socket.emit("team1-won", this.props.user)
+        }
+
+        this.updateCanvas();
     }
 
     componentDidMount() {
@@ -444,13 +483,20 @@ class Board extends React.Component {
             this.updateMoves();
             this.setState({team1Turn: !info.team});
             this.updateCanvas();
-
             this.props.setTurnMsg.call(this, !info.team);
+        })
+
+        this.props.socket.on("team1-won", () => {
+            // Tell the user that team 1 won.
+            this.props.hideTurnMsg.call(this)
+            this.props.setWonMsg.call(this, true)
 
         })
 
-        console.log(boardToStringArray(this.board));
-
+        this.props.socket.on("team2-won", () => {
+            this.props.hideTurnMsg.call(this)
+            this.props.setWonMsg.call(this, false)
+        })
     }
 
     componentDidUpdate() {

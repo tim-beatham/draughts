@@ -62,11 +62,22 @@ function messageSent(socket) {
     });
 }
 
+
 function moveMade(socket) {
     socket.on("client-move-made", (info) => {
         // Broad cast it to everyone on the socket.
         io.sockets.in(users[info.username]).emit("server-move-made", {board: info.board, team: info.team});
     });
+}
+
+function teamWon(socket) {
+    socket.on("team1-won", (username) => {
+        io.sockets.in(users[username]).emit("team1-won")
+    })
+
+    socket.on("team2-won", (username) => {
+        io.sockets.in(users[username]).emit("team2-won")
+    })
 }
 
 
@@ -108,8 +119,11 @@ io.on('connection', function (socket) {
     messageSent(socket);
     canJoin(socket);
     moveMade(socket);
+    teamWon(socket);
 
     socket.on("user-disconnecting", (username) => {
+        // Remove all users from the game.
+        io.sockets.in(users[username]).emit("user-disconnected")
         removeUser(username);
     })
 

@@ -23,7 +23,9 @@ class GameInstance extends React.Component {
         noServer: false,
         userExists: false,
         team1: true,
-        turnMsg: "Waiting for the other player to join."
+        turnMsg: "Waiting for the other player to join.",
+        wonMsg: "",
+        connectionRefused: false
     }
 
     changeTurnMsg = (team) => {
@@ -34,7 +36,20 @@ class GameInstance extends React.Component {
         }
     }
 
+    hideTurnMsg = () => {
+        this.setState({turnMsg: ""})
+    }
+
+    setWonMsg = (team) => {
+        if (team) {
+            this.setState({wonMsg: this.state.users[0] + " has won!"})
+        } else {
+            this.setState({wonMsg: this.state.users[1] + " has won!"})
+        }
+    }
+
     componentDidMount() {
+        this.setState({connectionRefused: false})
         // Listen for the user closing the browser,
         window.addEventListener("beforeunload", (ev) => {
             this.disconnect();
@@ -77,6 +92,15 @@ class GameInstance extends React.Component {
         this.socket.on("start", () => {
             this.changeTurnMsg(this.state.users[0] + "'s turn");
         });
+
+        this.socket.on("disconnect", () => {
+            this.setState({connectionRefused: true})
+        })
+
+        this.socket.on("user-disconnected", () => {
+            this.disconnect()
+            this.setState({connectionRefused: true})
+        })
     }
 
     disconnect = () => {
@@ -106,6 +130,10 @@ class GameInstance extends React.Component {
         if (this.props.username === ""){
             return <Redirect to='/' />
         }
+
+        if (this.state.connectionRefused) {
+            return <Redirect to='/' />
+        }
     }
 
     render() {
@@ -123,8 +151,9 @@ class GameInstance extends React.Component {
                     <p>{this.state.serverID}</p>
                     <p>Users: {this.state.users.join(", ")}</p>
                     <p>{this.state.turnMsg}</p>
+                    <p>{this.state.wonMsg}</p>
                     <Board socket={this.socket} user={this.props.username} team={this.state.team1}
-                    setTurnMsg={this.changeTurnMsg}/>
+                    setTurnMsg={this.changeTurnMsg} setWonMsg={this.setWonMsg} hideTurnMsg={this.hideTurnMsg}/>
                 </div>
             </div>
         );
