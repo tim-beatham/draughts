@@ -4,7 +4,7 @@ import "../stylesheets/CreateOrJoin.css"
 import Board from "./Board";
 import {Redirect} from 'react-router-dom';
 
-const ENDPOINT = "http://localhost:4000"
+const ENDPOINT = "http://86.134.79.199:4000"
 
 class GameInstance extends React.Component {
 
@@ -25,7 +25,7 @@ class GameInstance extends React.Component {
         team1: true,
         turnMsg: "Waiting for the other player to join.",
         wonMsg: "",
-        connectionRefused: false
+        connectionRefused: false,
     }
 
     changeTurnMsg = (team) => {
@@ -116,6 +116,14 @@ class GameInstance extends React.Component {
         this.setState({message: e.target.value});
     }
 
+    displayBoard = () => {
+        if (this.state.users.length === 2) {
+            return  <Board socket={this.socket} user={this.props.username} team={this.state.team1}
+                           setTurnMsg={this.changeTurnMsg} setWonMsg={this.setWonMsg} hideTurnMsg={this.hideTurnMsg}
+                           users={this.state.users}/>
+        }
+    }
+
     submitChat = (e) => {
         e.preventDefault();
         // Send a message to all clients on the socket.
@@ -152,8 +160,8 @@ class GameInstance extends React.Component {
                     <p>Users: {this.state.users.join(", ")}</p>
                     <p>{this.state.turnMsg}</p>
                     <p>{this.state.wonMsg}</p>
-                    <Board socket={this.socket} user={this.props.username} team={this.state.team1}
-                    setTurnMsg={this.changeTurnMsg} setWonMsg={this.setWonMsg} hideTurnMsg={this.hideTurnMsg}/>
+                    {this.displayBoard()}
+
                 </div>
             </div>
         );

@@ -378,7 +378,7 @@ class Board extends React.Component {
     }
 
     promoteToKing = (indexX, indexY) => {
-        // Check if the piece can be kinged.
+        // Check if the piece can be become a king.
         if ((this.board[indexY][indexX].isTeam1 && indexY === this.board.length - 1) ||
             !this.board[indexY][indexX].isTeam1 && indexY === 0){
             // King the piece.
@@ -397,9 +397,21 @@ class Board extends React.Component {
 
         var indexX = Math.floor(relativeX / this.squareSize);
         var indexY = Math.floor(relativeY / this.squareSize);
+
+        if (indexX > this.boardSize - 1)
+            indexX = this.boardSize - 1
+
+        if (indexX < 0)
+            indexX = 0
+
+        if (indexY > this.boardSize - 1)
+            indexY = this.boardSize - 1
+
+        if (indexY < 0)
+            indexY = 0
+
         if (!this.state.chaining) {
             if (this.board[indexY][indexX] !== null) {
-
                 if (this.board[indexY][indexX].isTeam1 === this.state.team1Turn
                     && this.board[indexY][indexX].isTeam1 === this.props.team) {
                     // Draw a red square.
@@ -460,12 +472,14 @@ class Board extends React.Component {
                 }
             }
         }
+
         // Check if a team has won
-        if (!this.canTeam1Move()){
+        this.updateMoves()
+        if (!this.canTeam1Move()) {
             this.props.socket.emit("team2-won", this.props.user)
         }
 
-        if (!this.canTeam2Move()){
+        if (!this.canTeam2Move()) {
             this.props.socket.emit("team1-won", this.props.user)
         }
 

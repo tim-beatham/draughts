@@ -2,7 +2,7 @@ import React from "react";
 import {Redirect} from "react-router-dom";
 import socketIOClient from "socket.io-client";
 
-const ENDPOINT = "http://localhost:4000";
+const ENDPOINT = "http://86.134.79.199:4000";
 
 // Simply checks whether a username exists or not.
 class CheckServers extends React.Component {
@@ -12,7 +12,7 @@ class CheckServers extends React.Component {
         noServer: false,
         canJoin: false,
         errorMsg: "",
-        full: false
+        full: false,
     }
 
     constructor() {
@@ -44,10 +44,10 @@ class CheckServers extends React.Component {
         })
 
         this.socket.on("server-full", () => {
-            console.log("alriight");
             this.setState({full: true})
             this.cantJoin();
-        });
+        })
+
     }
 
     componentWillUnmount() {
@@ -55,6 +55,8 @@ class CheckServers extends React.Component {
         this.setState({userExists: false});
         this.setState({noServer: false});
         this.setState({canJoin: false});
+        this.setState({full: false})
+        this.setState({noInternet: false})
     }
 
     cantJoin = () => {
@@ -67,8 +69,8 @@ class CheckServers extends React.Component {
             errorMsg += "The Username Already Exists!\n";
         }
 
-        if (this.state.full){
-            errorMsg += "I am afraid the Server is Full!"
+        if (this.state.full) {
+            errorMsg += "I am afraid the Server is Full!\n"
         }
         this.setState({errorMsg: errorMsg});
     }
